@@ -1,0 +1,25 @@
+{
+  "name": "colgm",
+  "displayName": "colgm",
+  "description": "Syntax highlighting for Colgm",
+  "version": "0.0.1",
+  "engines": {
+    "vscode": "^1.99.0"
+  },
+  "categories": [
+    "Programming Languages"
+  ],
+  "contributes": {
+    "languages": [{
+      "id": "colgm",
+      "aliases": ["colgm", "colgm"],
+      "extensions": [".colgm"],
+      "configuration": "./language-configuration.json"
+    }],
+    "grammars": [{
+      "language": "colgm",
+      "scopeName": "source.colgm",
+      "path": "./syntaxes/colgm.tmLanguage.json"
+    }]
+  }
+}

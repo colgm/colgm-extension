@@ -1,0 +1,139 @@
+%YAML 1.2
+---
+name: colgm
+file_extensions:
+  - colgm
+scope: source.colgm
+
+contexts:
+  main:
+    - include: comments
+    - include: attributes
+    - include: keywords
+    - include: control-flow
+    - include: types
+    - include: literals
+    - include: operators
+    - include: functions
+    - include: enums
+    - include: numbers
+    - include: strings
+    - include: chars
+    - include: punctuation
+    - include: identifiers
+
+  comments:
+    - match: '//.*$'
+      scope: comment.line.double-slash.colgm
+
+  attributes:
+    - match: '#\['
+      scope: punctuation.definition.annotation.begin.colgm
+      push:
+        - meta_scope: meta.annotation.colgm
+        - match: '\]'
+          scope: punctuation.definition.annotation.end.colgm
+          pop: true
+        - match: '\('
+          scope: punctuation.section.group.begin.colgm
+          push:
+            - meta_scope: meta.group.annotation.colgm
+            - match: '\)'
+              scope: punctuation.section.group.end.colgm
+              pop: true
+        - match: '[a-zA-Z_]\w*'
+          scope: support.function.annotation.colgm
+        - match: '[=|&!<>*/+%-]+'
+          scope: keyword.operator.annotation.colgm
+        - match: '[0-9]+'
+          scope: constant.numeric.annotation.colgm
+        - match: '"[^"]*"'
+          scope: string.quoted.double.annotation.colgm
+
+  keywords:
+    - match: \b(func|struct|enum|match|impl|if|else|elsif|for|foreach|forindex|while|return|break|continue|var|pub|use)\b
+      scope: keyword.control.colgm
+
+  control-flow:
+    - match: \b(?:if|else|elsif|while|for|foreach|forindex|match|break|continue)\b
+      scope: keyword.control.colgm
+
+  types:
+    - match: \b(i(8|16|32|64)|u(8|16|32|64)|f(32|64)|bool|void)\b
+      scope: storage.type.colgm
+    - match: \b[A-Z][A-Za-z0-9_]*\*?\b
+      scope: entity.name.type.colgm
+
+  literals:
+    - match: \b(true|false)\b
+      scope: constant.language.boolean.colgm
+    - match: \bnil\b
+      scope: constant.language.null.colgm
+
+  operators:
+    - match: '=>'
+      scope: keyword.operator.cast.colgm
+    - match: '(\+|\-|\*|\/|%|==|!=|<=|>=|<|>|=|\|\||&&|\||\^|&|::)'
+      scope: keyword.operator.colgm
+    - match: '(\+=|\-=|\*=|/=|%=|\|=|&=|\^=)'
+      scope: keyword.operator.assignment.colgm
+
+  functions:
+    - match: \bfunc\b\s+([a-zA-Z_][a-zA-Z0-9_]*)\b
+      captures:
+        1: entity.name.function.colgm
+    - match: \b([a-zA-Z_][a-zA-Z0-9_]*)\s*(?=\()
+      scope: support.function.call.colgm
+
+  enums:
+    - match: \b(enum|impl)\s+([A-Z][\w]*)\b
+      captures:
+        1: storage.type.enum.colgm
+        2: entity.name.type.enum.colgm
+
+  enum-paths:
+    - match: '\b([A-Z][A-Za-z0-9_]*)::([a-z_][A-Za-z0-9_]*)\b'
+      captures:
+        1: entity.name.namespace.colgm
+        2: constant.other.enum-member.colgm
+
+  struct-fields:
+    - match: '\b([a-z_][A-Za-z0-9_]*)\s*:'
+      scope: variable.other.member.colgm
+
+  numbers:
+    - match: \b0x[0-9a-fA-F]+\b
+      scope: constant.numeric.hex.colgm
+    - match: \b0o[0-7]+\b
+      scope: constant.numeric.octal.colgm
+    - match: \b\d+\.\d+\b
+      scope: constant.numeric.float.colgm
+    - match: \b\d+\b
+      scope: constant.numeric.integer.colgm
+
+  strings:
+    - match: '"'
+      scope: punctuation.definition.string.begin.colgm
+      push:
+        - meta_scope: string.quoted.double.colgm
+        - match: '"'
+          scope: punctuation.definition.string.end.colgm
+          pop: true
+    - match: "'(\\.|[^'])'"
+      scope: string.quoted.single.colgm
+
+  chars:
+    - match: "'\\?.'"
+      scope: string.quoted.single.char.colgm
+
+  punctuation:
+    - match: '[\{\}\[\]\(\)\.,;:]'
+      scope: punctuation.colgm
+
+  identifiers:
+    - match: \b[a-zA-Z_]\w*\b
+      scope: variable.other.colgm
+
+  generics:
+    - match: '<[a-zA-Z0-9_, \*\[\]]+>'
+      scope: meta.generic.colgm
