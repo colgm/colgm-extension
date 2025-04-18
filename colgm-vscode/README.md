@@ -1,4 +1,4 @@
-# colgm README
+# colgm VSCODE README
 
 This is the README for your extension "colgm". After writing up a brief description, we recommend including the following sections.
 
