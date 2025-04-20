@@ -1,7 +1,13 @@
 {
   "name": "colgm",
+  "publisher": "colgm",
   "displayName": "colgm",
   "description": "Syntax highlighting for Colgm",
+  "icon": "./icon/colgm.png",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/colgm/colgm-extension"
+  },
   "version": "0.0.1",
   "engines": {
     "vscode": "^1.99.0"
