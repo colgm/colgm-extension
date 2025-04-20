@@ -1,0 +1,44 @@
+name: VSCode Extension Build
+
+on:
+  push:
+    branches: [ main, vk_dev ]
+    paths:
+      - .github/workflows/vscode-extension-build.yml
+      - colgm-vscode/**
+  pull_request:
+    branches: [ main, vk_dev ]
+    paths:
+      - .github/workflows/vscode-extension-build.yml
+      - colgm-vscode/**
+  workflow_dispatch:
+
+jobs:
+  linux-x86_64-build-bootstrap:
+    runs-on: ubuntu-latest
+    steps:
+    - name: checkout
+      uses: actions/checkout@v4
+    - name: update tag
+      run: |
+          git fetch --tags origin
+          git tag -f vscode_extension_nightly
+          git push -f origin vscode_extension_nightly
+    - name: fetch npm
+      run: |
+          sudo apt-get update
+          sudo apt-get install npm nodejs
+          sudo npm install -g @vscode/vsce
+    - name: build
+      run: |
+          cd colgm-vscode
+          vsce package
+    - name: release
+      uses: softprops/action-gh-release@v2.0.5
+      with:
+        name: vscode extension nightly
+        tag_name: vscode_extension_nightly
+        prerelease: true
+        draft: false
+        files: |
+          colgm-vscode/colgm-*.vsix
