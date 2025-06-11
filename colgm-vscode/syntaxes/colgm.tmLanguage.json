@@ -670,7 +670,7 @@
               {
                   "comment": "control flow keywords",
                   "name": "keyword.control.colgm",
-                  "match": "\\b(await|break|continue|do|else|for|foreach|forindex|if|loop|match|return|try|while|yield)\\b"
+                  "match": "\\b(await|break|continue|do|else|for|foreach|forindex|defer|if|loop|match|return|try|while|yield)\\b"
               },
               {
                   "comment": "storage keywords",
@@ -730,7 +730,7 @@
               {
                   "comment": "logical operators",
                   "name": "keyword.operator.logical.colgm",
-                  "match": "(\\^|\\||\\|\\||&&|<<|>>|!)(?!=)"
+                  "match": "(\\^|\\||\\|\\||&&|<<|>>|!|and|or)(?!=)"
               },
               {
                   "comment": "logical AND, borrow references",

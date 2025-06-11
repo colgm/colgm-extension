@@ -18,6 +18,10 @@
 
 ## Release Notes
 
+### 0.0.2
+
+Add new keyword `defer`.
+
 ### 0.0.1
 
 Initial release of colgm extension. Simple syntax highlighting is provided.
