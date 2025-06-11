@@ -8,7 +8,7 @@ if exists("b:current_syntax")
 endif
 
 " --- Keywords ---
-syntax keyword colgmKeyword func pub var return struct enum match use if else elsif for while foreach forindex impl break continue nil true false 
+syntax keyword colgmKeyword func pub var return struct enum match use defer and or if else elsif for while foreach forindex impl break continue nil true false 
 
 " --- Types ---
 syntax keyword colgmType i8 i16 i32 i64 u8 u16 u32 u64 f32 f64 bool void self
@@ -32,14 +32,14 @@ syntax match colgmInt /\v<\d+>/
 syntax region colgmString start=/"/ skip=/\\"/ end=/"/
 syntax region colgmChar start=/'/ skip=/\\'/ end=/'/
 
-" --- Comments ---
-syntax match colgmComment /\/\/.*/
-
 " --- Attributes / Conditional Compilation ---
 syntax match colgmAttribute /#\[[a-zA-Z0-9_="]*\]/
 
 " --- Operators ---
 syntax match colgmOperator /==\|!=\|<=\|>=\|<\|>\|=\|+\|-\|\*\|\/\|%\||\|\^\|&\|=>\|&&\|||/
+
+" --- Comments ---
+syntax region colgmComment start="//" end="$"
 
 " --- Grouping ---
 syntax match colgmDelimiter /[{}()\[\],.:;]/ 
