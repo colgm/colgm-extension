@@ -18,6 +18,10 @@
 
 ## Release Notes
 
+### 0.0.3
+
+Fix `and` `or`, and dot access highlighting issues.
+
 ### 0.0.2
 
 Add new keyword `defer`.

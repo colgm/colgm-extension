@@ -710,7 +710,7 @@
               {
                   "comment": "other keywords",
                   "name": "keyword.other.colgm",
-                  "match": "\\b(as|async|become|box|dyn|move|final|gen|impl|in|override|priv|pub|ref|typeof|union|unsafe|unsized|use|virtual|where)\\b"
+                  "match": "\\b(impl|pub|union|unsafe|use|and|or)\\b"
               },
               {
                   "comment": "func",
@@ -730,7 +730,7 @@
               {
                   "comment": "logical operators",
                   "name": "keyword.operator.logical.colgm",
-                  "match": "(\\^|\\||\\|\\||&&|<<|>>|!|and|or)(?!=)"
+                  "match": "(\\^|\\||\\|\\||&&|<<|>>|!)(?!=)"
               },
               {
                   "comment": "logical AND, borrow references",
@@ -1179,7 +1179,7 @@
               {
                   "comment": "variables",
                   "name": "variable.other.colgm",
-                  "match": "\\b(?<!(?<!\\.)\\.)(?:r#(?!(crate|[Ss]elf|super)))?[a-z0-9_]+\\b"
+                  "match": "\\b(?:r#(?!(crate|[Ss]elf|super)))?[a-z0-9_]+\\b"
               }
           ]
       }
