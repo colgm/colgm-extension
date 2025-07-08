@@ -8,7 +8,7 @@ if exists("b:current_syntax")
 endif
 
 " --- Keywords ---
-syntax keyword colgmKeyword func pub var return struct enum match use defer and or if else elsif for while foreach forindex impl break continue nil true false 
+syntax keyword colgmKeyword func pub var return struct enum union match use defer and or if else elsif for while foreach forindex impl break continue nil true false 
 
 " --- Types ---
 syntax keyword colgmType i8 i16 i32 i64 u8 u16 u32 u64 f32 f64 bool void self
