@@ -670,7 +670,7 @@
               {
                   "comment": "control flow keywords",
                   "name": "keyword.control.colgm",
-                  "match": "\\b(await|break|continue|do|else|for|foreach|forindex|if|loop|match|return|try|while|yield)\\b"
+                  "match": "\\b(await|break|continue|do|else|for|foreach|forindex|defer|if|loop|match|return|try|while|yield)\\b"
               },
               {
                   "comment": "storage keywords",
@@ -710,7 +710,7 @@
               {
                   "comment": "other keywords",
                   "name": "keyword.other.colgm",
-                  "match": "\\b(as|async|become|box|dyn|move|final|gen|impl|in|override|priv|pub|ref|typeof|union|unsafe|unsized|use|virtual|where)\\b"
+                  "match": "\\b(impl|pub|union|unsafe|use|and|or)\\b"
               },
               {
                   "comment": "func",
@@ -1179,7 +1179,7 @@
               {
                   "comment": "variables",
                   "name": "variable.other.colgm",
-                  "match": "\\b(?<!(?<!\\.)\\.)(?:r#(?!(crate|[Ss]elf|super)))?[a-z0-9_]+\\b"
+                  "match": "\\b(?:r#(?!(crate|[Ss]elf|super)))?[a-z0-9_]+\\b"
               }
           ]
       }

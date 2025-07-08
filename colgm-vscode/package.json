@@ -8,7 +8,7 @@
     "type": "git",
     "url": "https://github.com/colgm/colgm-extension"
   },
-  "version": "0.0.1",
+  "version": "0.0.3",
   "engines": {
     "vscode": "^1.99.0"
   },
