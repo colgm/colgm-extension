@@ -18,16 +18,22 @@
 
 ## Release Notes
 
+### 0.0.4
+
+- Delete some unnecessary keywords.
+- Add reserved word `nil`.
+
 ### 0.0.3
 
-Fix `and` `or`, and dot access highlighting issues.
+- Fix `and` `or`, and dot access highlighting issues.
 
 Add `elsif` keyword highlighting.
 
 ### 0.0.2
 
-Add new keyword `defer`.
+- Add new keyword `defer`.
 
 ### 0.0.1
 
-Initial release of colgm extension. Simple syntax highlighting is provided.
+- Initial release of colgm extension.
+- Simple syntax highlighting is provided.

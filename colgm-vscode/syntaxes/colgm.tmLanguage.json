@@ -670,7 +670,7 @@
               {
                   "comment": "control flow keywords",
                   "name": "keyword.control.colgm",
-                  "match": "\\b(await|break|continue|do|else|elsif|for|foreach|forindex|defer|if|loop|match|return|try|while|yield)\\b"
+                  "match": "\\b(break|continue|do|else|elsif|for|foreach|forindex|defer|if|match|return|while)\\b"
               },
               {
                   "comment": "storage keywords",
@@ -710,7 +710,7 @@
               {
                   "comment": "other keywords",
                   "name": "keyword.other.colgm",
-                  "match": "\\b(impl|pub|union|unsafe|use|and|or)\\b"
+                  "match": "\\b(impl|pub|union|unsafe|use|and|or|nil)\\b"
               },
               {
                   "comment": "func",
