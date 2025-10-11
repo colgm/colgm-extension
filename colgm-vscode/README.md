@@ -26,8 +26,7 @@
 ### 0.0.3
 
 - Fix `and` `or`, and dot access highlighting issues.
-
-Add `elsif` keyword highlighting.
+- Add `elsif` keyword highlighting.
 
 ### 0.0.2
 
