@@ -40,6 +40,7 @@ syntax match colgmOperator /==\|!=\|<=\|>=\|<\|>\|=\|+\|-\|\*\|\/\|%\||\|\^\|&\|
 
 " --- Comments ---
 syntax region colgmComment start="//" end="$"
+syntax region colgmCommentBlock start="/\*" end="\*/" contains=colgmComment
 
 " --- Grouping ---
 syntax match colgmDelimiter /[{}()\[\],.:;]/ 
@@ -57,8 +58,11 @@ highlight def link colgmInt Number
 highlight def link colgmString String
 highlight def link colgmChar Character
 highlight def link colgmComment Comment
+highlight def link colgmCommentBlock colgmComment
 highlight def link colgmAttribute PreProc
 highlight def link colgmOperator Operator
 highlight def link colgmDelimiter Delimiter
+
+syntax sync fromstart
 
 let b:current_syntax = "colgm"
