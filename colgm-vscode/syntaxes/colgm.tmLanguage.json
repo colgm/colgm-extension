@@ -683,11 +683,6 @@
                   "match": "\\b(const)\\b"
               },
               {
-                  "comment": "type keyword",
-                  "name": "keyword.declaration.type.colgm storage.type.colgm",
-                  "match": "\\b(type)\\b"
-              },
-              {
                   "comment": "enum keyword",
                   "name": "keyword.declaration.enum.colgm storage.type.colgm",
                   "match": "\\b(enum)\\b"
@@ -1010,18 +1005,6 @@
                       },
                       "2": {
                           "name": "entity.name.type.enum.colgm"
-                      }
-                  }
-              },
-              {
-                  "comment": "type declarations",
-                  "match": "\\b(type)\\s+(_?[A-Z][A-Za-z0-9_]*)\\b",
-                  "captures": {
-                      "1": {
-                          "name": "keyword.declaration.type.colgm storage.type.colgm"
-                      },
-                      "2": {
-                          "name": "entity.name.type.declaration.colgm"
                       }
                   }
               },
