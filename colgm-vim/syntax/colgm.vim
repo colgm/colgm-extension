@@ -29,8 +29,8 @@ syntax match colgmFloat /\v<\d+\.\d+>/
 syntax match colgmInt /\v<\d+>/
 
 " --- Strings & Characters ---
-syntax region colgmString start=/"/ skip=/\\"/ end=/"/
-syntax region colgmChar start=/'/ skip=/\\'/ end=/'/
+syntax region colgmString start=/"/ skip=/\\\%(\\\|"\)/ end=/"/
+syntax region colgmChar start=/'/ skip=/\\\%(\\\|'\)/ end=/'/
 
 " --- Attributes / Conditional Compilation ---
 syntax match colgmAttribute /#\[[a-zA-Z0-9_="]*\]/
