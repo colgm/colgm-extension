@@ -2,30 +2,90 @@
   "name": "colgm",
   "publisher": "colgm",
   "displayName": "colgm",
-  "description": "Syntax highlighting for Colgm",
+  "description": "Language support for Colgm with LSP features",
   "icon": "./icon/colgm.png",
   "repository": {
     "type": "git",
-    "url": "https://github.com/colgm/colgm-extension"
+    "url": "git+https://github.com/colgm/colgm-extension.git"
   },
-  "version": "0.0.4",
+  "version": "0.0.5",
   "engines": {
     "vscode": "^1.99.0"
   },
   "categories": [
     "Programming Languages"
   ],
+  "activationEvents": [
+    "onLanguage:colgm"
+  ],
+  "main": "./dist/extension.js",
   "contributes": {
-    "languages": [{
-      "id": "colgm",
-      "aliases": ["colgm", "colgm"],
-      "extensions": [".colgm"],
-      "configuration": "./language-configuration.json"
-    }],
-    "grammars": [{
-      "language": "colgm",
-      "scopeName": "source.colgm",
-      "path": "./syntaxes/colgm.tmLanguage.json"
-    }]
+    "languages": [
+      {
+        "id": "colgm",
+        "aliases": [
+          "colgm",
+          "colgm"
+        ],
+        "extensions": [
+          ".colgm"
+        ],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "colgm",
+        "scopeName": "source.colgm",
+        "path": "./syntaxes/colgm.tmLanguage.json"
+      }
+    ],
+    "configuration": {
+      "type": "object",
+      "title": "Colgm",
+      "properties": {
+        "colgm.trace.server": {
+          "scope": "window",
+          "type": "string",
+          "enum": [
+            "off",
+            "messages",
+            "verbose"
+          ],
+          "default": "off",
+          "description": "Traces the communication between VS Code and the language server."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run build",
+    "build": "npm run build:extension && npm run build:server",
+    "build:extension": "esbuild ./src/extension.ts --bundle --outfile=dist/extension.js --external:vscode --format=cjs --platform=node",
+    "build:server": "esbuild ./src/server.ts --bundle --outfile=dist/server.js --external:vscode --format=cjs --platform=node",
+    "watch": "npm run watch:extension & npm run watch:server",
+    "watch:extension": "esbuild ./src/extension.ts --bundle --outfile=dist/extension.js --external:vscode --format=cjs --platform=node --watch",
+    "watch:server": "esbuild ./src/server.ts --bundle --outfile=dist/server.js --external:vscode --format=cjs --platform=node --watch",
+    "compile": "tsc -p ./",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/colgm/colgm-extension/issues"
+  },
+  "homepage": "https://github.com/colgm/colgm-extension#readme",
+  "dependencies": {
+    "vscode-languageclient": "^9.0.1",
+    "vscode-languageserver": "^9.0.1",
+    "vscode-languageserver-protocol": "^3.17.5",
+    "vscode-languageserver-textdocument": "^1.0.12"
+  },
+  "devDependencies": {
+    "@types/node": "^25.3.5",
+    "@types/vscode": "^1.99.0",
+    "esbuild": "^0.27.3",
+    "typescript": "^5.9.3"
   }
 }

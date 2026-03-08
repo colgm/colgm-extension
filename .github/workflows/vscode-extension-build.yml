@@ -32,6 +32,7 @@ jobs:
     - name: build
       run: |
           cd colgm-vscode
+          sudo npm install
           vsce package
     - name: release
       uses: softprops/action-gh-release@v2.0.5
