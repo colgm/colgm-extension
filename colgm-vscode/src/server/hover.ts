@@ -5,7 +5,40 @@ import {
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import { getWordAtPosition } from './utils';
 import { typeDescriptions, keywordDescriptions } from './completions';
-import { symbolDefinitions } from './symbols';
+import { symbolDefinitions, MemberInfo } from './symbols';
+
+/**
+ * Format members for hover display
+ */
+function formatMembers(members: MemberInfo[], kind: string): string {
+    if (!members || members.length === 0) {
+        return '';
+    }
+
+    const lines: string[] = [];
+    
+    if (kind === 'enum') {
+        // Enum variants
+        for (const member of members) {
+            if (member.type) {
+                lines.push(`  ${member.name}(${member.type})`);
+            } else {
+                lines.push(`  ${member.name}`);
+            }
+        }
+    } else {
+        // Struct/union fields
+        for (const member of members) {
+            if (member.type) {
+                lines.push(`  ${member.name}: ${member.type}`);
+            } else {
+                lines.push(`  ${member.name}`);
+            }
+        }
+    }
+
+    return lines.join('\n');
+}
 
 /**
  * Get hover information for a position in the document
@@ -47,13 +80,23 @@ export function getHover(document: TextDocument, position: Position): Hover | nu
                               symbolDef.kind === 'union' ? 'union' : '';
 
             const signature = symbolDef.signature || `${kindLabel} ${word}`;
+            
+            let hoverContent = signature;
+            
+            // Add members for struct/enum/union
+            if (symbolDef.members && symbolDef.members.length > 0) {
+                const membersContent = formatMembers(symbolDef.members, symbolDef.kind);
+                if (membersContent) {
+                    hoverContent += ' {\n' + membersContent + '\n}';
+                }
+            }
 
             return {
                 contents: {
                     kind: 'markdown',
                     value: [
                         '```colgm',
-                        signature,
+                        hoverContent,
                         '```'
                     ].join('\n')
                 }

@@ -11,6 +11,15 @@ import {
 import { getWordAtPosition } from './utils';
 
 /**
+ * Member/field information for struct/enum/union
+ */
+export interface MemberInfo {
+    name: string;
+    type?: string;
+    value?: string;
+}
+
+/**
  * Symbol definition interface
  */
 export interface SymbolDefinition {
@@ -20,13 +29,65 @@ export interface SymbolDefinition {
     character: number;
     kind: string;
     signature?: string;  // Full signature for hover display
-    detail?: string;     // Additional detail information
+    members?: MemberInfo[];  // Members for struct/enum/union
 }
 
 /**
  * Store symbol definitions for go-to-definition
  */
 export const symbolDefinitions: Map<string, SymbolDefinition[]> = new Map();
+
+/**
+ * Parse members from struct/enum/union body
+ */
+function parseMembers(lines: string[], startLine: number, kind: string): MemberInfo[] {
+    const members: MemberInfo[] = [];
+    let braceCount = 0;
+    let started = false;
+
+    for (let i = startLine; i < lines.length; i++) {
+        const line = lines[i].trim();
+
+        // Count braces to find the end of the definition
+        for (const char of line) {
+            if (char === '{') {
+                braceCount++;
+                started = true;
+            } else if (char === '}') {
+                braceCount--;
+            }
+        }
+
+        if (!started) continue;
+
+        // Skip the opening line with just '{'
+        if (line === '{' || line.endsWith('{')) continue;
+        if (line === '}') break;
+
+        // Parse enum variant: `Case(Type)` or `Case`
+        if (kind === 'enum') {
+            const enumVariantMatch = line.match(/^([A-Z][a-zA-Z0-9_]*)\s*(?:\(([^)]*)\))?/);
+            if (enumVariantMatch) {
+                members.push({
+                    name: enumVariantMatch[1],
+                    type: enumVariantMatch[2] || undefined
+                });
+            }
+            continue;
+        }
+
+        // Struct/union field: `name: Type` or `pub name: Type`
+        const fieldMatch = line.match(/^(?:pub\s+)?([a-zA-Z_][a-zA-Z0-9_]*)\s*:\s*(.+?),?\s*$/);
+        if (fieldMatch) {
+            members.push({
+                name: fieldMatch[1],
+                type: fieldMatch[2].trim()
+            });
+        }
+    }
+
+    return members;
+}
 
 /**
  * Build symbol definitions from a document
@@ -46,7 +107,7 @@ export function buildSymbolDefinitions(document: TextDocument): void {
             const params = funcMatch[2];
             const returnType = funcMatch[3];
             const signature = `func ${funcName}(${params})${returnType ? ' -> ' + returnType : ''}`;
-            
+
             definitions.push({
                 name: funcName,
                 uri: document.uri,
@@ -61,13 +122,15 @@ export function buildSymbolDefinitions(document: TextDocument): void {
         const structMatch = line.match(/\bstruct\s+([A-Z][a-zA-Z0-9_]*)\s*\{/);
         if (structMatch) {
             const structName = structMatch[1];
+            const members = parseMembers(lines, i, 'struct');
             definitions.push({
                 name: structName,
                 uri: document.uri,
                 line: i,
                 character: line.indexOf(structName),
                 kind: 'struct',
-                signature: `struct ${structName}`
+                signature: `struct ${structName}`,
+                members: members
             });
         }
 
@@ -75,27 +138,32 @@ export function buildSymbolDefinitions(document: TextDocument): void {
         const enumMatch = line.match(/\benum\s+([A-Z][a-zA-Z0-9_]*)\s*\{/);
         if (enumMatch) {
             const enumName = enumMatch[1];
+            const members = parseMembers(lines, i, 'enum');
             definitions.push({
                 name: enumName,
                 uri: document.uri,
                 line: i,
                 character: line.indexOf(enumName),
                 kind: 'enum',
-                signature: `enum ${enumName}`
+                signature: `enum ${enumName}`,
+                members: members
             });
         }
 
-        // Match union definitions: union Name { ... }
-        const unionMatch = line.match(/\bunion\s+([A-Z][a-zA-Z0-9_]*)\s*\{/);
+        // Match union definitions: pub union(type) Name { ... } or union(type) Name { ... }
+        const unionMatch = line.match(/\b(?:pub\s+)?union\s*\(([^)]*)\)\s*([A-Z][a-zA-Z0-9_]*)\s*\{/);
         if (unionMatch) {
-            const unionName = unionMatch[1];
+            const unionType = unionMatch[1];
+            const unionName = unionMatch[2];
+            const members = parseMembers(lines, i, 'union');
             definitions.push({
                 name: unionName,
                 uri: document.uri,
                 line: i,
                 character: line.indexOf(unionName),
                 kind: 'union',
-                signature: `union ${unionName}`
+                signature: `union(${unionType}) ${unionName}`,
+                members: members
             });
         }
     }
