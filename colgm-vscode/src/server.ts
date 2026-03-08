@@ -10,6 +10,8 @@ import {
     Diagnostic,
     DiagnosticSeverity,
     Position,
+    DefinitionParams,
+    Location,
 } from 'vscode-languageserver/node';
 import { TextDocuments } from 'vscode-languageserver/node';
 import { TextDocument } from 'vscode-languageserver-textdocument';
@@ -98,29 +100,33 @@ connection.onInitialize((params: InitializeParams): InitializeResult => {
 
 // Helper: Get word at position
 function getWordAtPosition(document: TextDocument, position: Position): string | null {
-    const line = document.getText({
-        start: { line: position.line, character: 0 },
-        end: { line: position.line, character: document.positionAt(document.offsetAt(position) + 1).character }
-    });
-    
     const text = document.getText();
     const offset = document.offsetAt(position);
-    
+
+    // Handle edge case: offset at or beyond text length
+    if (offset >= text.length) {
+        return null;
+    }
+
     // Find word boundaries
     let start = offset;
     let end = offset;
-    
+
+    // Move start backward to find word beginning
     while (start > 0 && /[\w_]/.test(text[start - 1])) {
         start--;
     }
+
+    // Move end forward to find word end
     while (end < text.length && /[\w_]/.test(text[end])) {
         end++;
     }
-    
+
+    // If start equals end, there's no word at this position
     if (start === end) {
         return null;
     }
-    
+
     return text.substring(start, end);
 }
 
@@ -172,7 +178,7 @@ connection.onHover((params): Hover | null => {
     if (typeDescriptions[word]) {
         return {
             contents: {
-                kind: 'plaintext',
+                kind: 'markdown',
                 value: `**${word}**\n\n${typeDescriptions[word]}`
             }
         };
@@ -182,7 +188,7 @@ connection.onHover((params): Hover | null => {
     if (keywordDescriptions[word]) {
         return {
             contents: {
-                kind: 'plaintext',
+                kind: 'markdown',
                 value: `**${word}**\n\n${keywordDescriptions[word]}`
             }
         };
@@ -330,6 +336,111 @@ connection.onDocumentSymbol((params) => {
     }
 
     return symbols;
+});
+
+// Store symbol definitions for go-to-definition
+interface SymbolDefinition {
+    name: string;
+    uri: string;
+    line: number;
+    character: number;
+    kind: string;
+}
+
+const symbolDefinitions: Map<string, SymbolDefinition[]> = new Map();
+
+// Build symbol definitions from document
+function buildSymbolDefinitions(document: TextDocument): void {
+    const text = document.getText();
+    const lines = text.split('\n');
+    const definitions: SymbolDefinition[] = [];
+
+    for (let i = 0; i < lines.length; i++) {
+        const line = lines[i];
+
+        // Match function definitions
+        const funcMatch = line.match(/\bfunc\s+([a-zA-Z_][a-zA-Z0-9_]*)/);
+        if (funcMatch) {
+            definitions.push({
+                name: funcMatch[1],
+                uri: document.uri,
+                line: i,
+                character: line.indexOf(funcMatch[1]),
+                kind: 'func'
+            });
+        }
+
+        // Match struct definitions
+        const structMatch = line.match(/\bstruct\s+([A-Z][a-zA-Z0-9_]*)/);
+        if (structMatch) {
+            definitions.push({
+                name: structMatch[1],
+                uri: document.uri,
+                line: i,
+                character: line.indexOf(structMatch[1]),
+                kind: 'struct'
+            });
+        }
+
+        // Match enum definitions
+        const enumMatch = line.match(/\benum\s+([A-Z][a-zA-Z0-9_]*)/);
+        if (enumMatch) {
+            definitions.push({
+                name: enumMatch[1],
+                uri: document.uri,
+                line: i,
+                character: line.indexOf(enumMatch[1]),
+                kind: 'enum'
+            });
+        }
+    }
+
+    symbolDefinitions.set(document.uri, definitions);
+}
+
+// Find definition at position
+function findDefinition(params: DefinitionParams): Location[] | null {
+    const document = documents.get(params.textDocument.uri);
+    if (!document) {
+        return null;
+    }
+
+    const word = getWordAtPosition(document, params.position);
+    if (!word) {
+        return null;
+    }
+
+    // Search through all symbol definitions
+    const locations: Location[] = [];
+    for (const definitions of symbolDefinitions.values()) {
+        for (const def of definitions) {
+            if (def.name === word) {
+                locations.push({
+                    uri: def.uri,
+                    range: {
+                        start: { line: def.line, character: def.character },
+                        end: { line: def.line, character: def.character + def.name.length }
+                    }
+                });
+            }
+        }
+    }
+
+    return locations.length > 0 ? locations : null;
+}
+
+// Definition handler
+connection.onDefinition((params): Location[] | null => {
+    return findDefinition(params);
+});
+
+documents.onDidChangeContent((change): void => {
+    buildSymbolDefinitions(change.document);
+    validateTextDocument(change.document);
+});
+
+documents.onDidOpen((change): void => {
+    buildSymbolDefinitions(change.document);
 });
 
 // Make the text document manager listen on the connection
