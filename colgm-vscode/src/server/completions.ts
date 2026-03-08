@@ -7,7 +7,7 @@ import {
  * Colgm language keywords
  */
 export const keywords = [
-    'func', 'struct', 'enum', 'match', 'impl', 'if', 'else', 'elsif',
+    'func', 'struct', 'enum', 'union', 'match', 'impl', 'if', 'else', 'elsif',
     'for', 'foreach', 'forindex', 'while', 'return', 'break', 'continue',
     'var', 'pub', 'use', 'defer', 'and', 'or', 'nil', 'true', 'false'
 ];
@@ -51,6 +51,7 @@ export const keywordDescriptions: Record<string, string> = {
     'func': 'Define a function',
     'struct': 'Define a struct type',
     'enum': 'Define an enum type',
+    'union': 'Define a union type',
     'match': 'Pattern matching expression',
     'impl': 'Implement methods for a type',
     'if': 'Conditional statement',

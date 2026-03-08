@@ -537,7 +537,7 @@
               {
                   "comment": "function/method calls, chaining",
                   "name": "meta.function.call.colgm",
-                  "begin": "((?:r#(?!crate|[Ss]elf|super))?[A-Za-z0-9_]+)(\\()",
+                  "begin": "(?!union\\b)((?:r#(?!crate|[Ss]elf|super|union))?[A-Za-z0-9_]+)(\\()",
                   "beginCaptures": {
                       "1": {
                           "name": "entity.name.function.colgm"
@@ -603,7 +603,7 @@
               {
                   "comment": "function/method calls with turbofish",
                   "name": "meta.function.call.colgm",
-                  "begin": "((?:r#(?!crate|[Ss]elf|super))?[A-Za-z0-9_]+)(?=::<.*>\\()",
+                  "begin": "((?:r#(?!crate|[Ss]elf|super|union))?[A-Za-z0-9_]+)(?=::<.*>\\()",
                   "beginCaptures": {
                       "1": {
                           "name": "entity.name.function.colgm"

@@ -41,19 +41,20 @@ export function getHover(document: TextDocument, position: Position): Hover | nu
     if (definitions) {
         const symbolDef = definitions.find(def => def.name === word);
         if (symbolDef) {
-            const kindLabel = symbolDef.kind === 'func' ? 'function' : 
-                              symbolDef.kind === 'struct' ? 'struct' : 'enum';
-            const locationInfo = `${symbolDef.uri.split('/').pop()}:${symbolDef.line + 1}`;
-            
+            const kindLabel = symbolDef.kind === 'func' ? 'func' :
+                              symbolDef.kind === 'struct' ? 'struct' :
+                              symbolDef.kind === 'enum' ? 'enum' :
+                              symbolDef.kind === 'union' ? 'union' : '';
+
+            const signature = symbolDef.signature || `${kindLabel} ${word}`;
+
             return {
                 contents: {
                     kind: 'markdown',
                     value: [
-                        `**${word}**`,
-                        '',
-                        `Kind: \`${kindLabel}\``,
-                        '',
-                        `Location: \`${locationInfo}\``
+                        '```colgm',
+                        signature,
+                        '```'
                     ].join('\n')
                 }
             };

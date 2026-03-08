@@ -19,6 +19,8 @@ export interface SymbolDefinition {
     line: number;
     character: number;
     kind: string;
+    signature?: string;  // Full signature for hover display
+    detail?: string;     // Additional detail information
 }
 
 /**
@@ -37,39 +39,63 @@ export function buildSymbolDefinitions(document: TextDocument): void {
     for (let i = 0; i < lines.length; i++) {
         const line = lines[i];
 
-        // Match function definitions
-        const funcMatch = line.match(/\bfunc\s+([a-zA-Z_][a-zA-Z0-9_]*)/);
+        // Match function definitions: func name(params) -> ReturnType or func name(params)
+        const funcMatch = line.match(/\bfunc\s+([a-zA-Z_][a-zA-Z0-9_]*)\s*\(([^)]*)\)(?:\s*->\s*([a-zA-Z_][a-zA-Z0-9_]*))?/);
         if (funcMatch) {
+            const funcName = funcMatch[1];
+            const params = funcMatch[2];
+            const returnType = funcMatch[3];
+            const signature = `func ${funcName}(${params})${returnType ? ' -> ' + returnType : ''}`;
+            
             definitions.push({
-                name: funcMatch[1],
+                name: funcName,
                 uri: document.uri,
                 line: i,
-                character: line.indexOf(funcMatch[1]),
-                kind: 'func'
+                character: line.indexOf(funcName),
+                kind: 'func',
+                signature: signature
             });
         }
 
-        // Match struct definitions
-        const structMatch = line.match(/\bstruct\s+([A-Z][a-zA-Z0-9_]*)/);
+        // Match struct definitions: struct Name { ... }
+        const structMatch = line.match(/\bstruct\s+([A-Z][a-zA-Z0-9_]*)\s*\{/);
         if (structMatch) {
+            const structName = structMatch[1];
             definitions.push({
-                name: structMatch[1],
+                name: structName,
                 uri: document.uri,
                 line: i,
-                character: line.indexOf(structMatch[1]),
-                kind: 'struct'
+                character: line.indexOf(structName),
+                kind: 'struct',
+                signature: `struct ${structName}`
             });
         }
 
-        // Match enum definitions
-        const enumMatch = line.match(/\benum\s+([A-Z][a-zA-Z0-9_]*)/);
+        // Match enum definitions: enum Name { ... }
+        const enumMatch = line.match(/\benum\s+([A-Z][a-zA-Z0-9_]*)\s*\{/);
         if (enumMatch) {
+            const enumName = enumMatch[1];
             definitions.push({
-                name: enumMatch[1],
+                name: enumName,
                 uri: document.uri,
                 line: i,
-                character: line.indexOf(enumMatch[1]),
-                kind: 'enum'
+                character: line.indexOf(enumName),
+                kind: 'enum',
+                signature: `enum ${enumName}`
+            });
+        }
+
+        // Match union definitions: union Name { ... }
+        const unionMatch = line.match(/\bunion\s+([A-Z][a-zA-Z0-9_]*)\s*\{/);
+        if (unionMatch) {
+            const unionName = unionMatch[1];
+            definitions.push({
+                name: unionName,
+                uri: document.uri,
+                line: i,
+                character: line.indexOf(unionName),
+                kind: 'union',
+                signature: `union ${unionName}`
             });
         }
     }
