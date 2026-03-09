@@ -119,7 +119,8 @@ export function buildSymbolDefinitions(document: TextDocument): void {
         }
 
         // Match struct definitions: struct Name { ... }
-        const structMatch = line.match(/\bstruct\s+([A-Z][a-zA-Z0-9_]*)\s*\{/);
+        // Support both uppercase and lowercase starting letters
+        const structMatch = line.match(/\bstruct\s+([a-zA-Z_][a-zA-Z0-9_]*)\s*\{/);
         if (structMatch) {
             const structName = structMatch[1];
             const members = parseMembers(lines, i, 'struct');
@@ -135,7 +136,8 @@ export function buildSymbolDefinitions(document: TextDocument): void {
         }
 
         // Match enum definitions: enum Name { ... }
-        const enumMatch = line.match(/\benum\s+([A-Z][a-zA-Z0-9_]*)\s*\{/);
+        // Support both uppercase and lowercase starting letters
+        const enumMatch = line.match(/\benum\s+([a-zA-Z_][a-zA-Z0-9_]*)\s*\{/);
         if (enumMatch) {
             const enumName = enumMatch[1];
             const members = parseMembers(lines, i, 'enum');
@@ -151,7 +153,8 @@ export function buildSymbolDefinitions(document: TextDocument): void {
         }
 
         // Match union definitions: pub union(type) Name { ... } or union(type) Name { ... }
-        const unionMatch = line.match(/\b(?:pub\s+)?union\s*\(([^)]*)\)\s*([A-Z][a-zA-Z0-9_]*)\s*\{/);
+        // Support both uppercase and lowercase starting letters
+        const unionMatch = line.match(/\b(?:pub\s+)?union\s*\(([^)]*)\)\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*\{/);
         if (unionMatch) {
             const unionType = unionMatch[1];
             const unionName = unionMatch[2];
@@ -209,6 +212,17 @@ export function findDefinition(
 }
 
 /**
+ * Get all symbol definitions across all documents
+ */
+export function getAllSymbolDefinitions(): SymbolDefinition[] {
+    const allDefinitions: SymbolDefinition[] = [];
+    for (const definitions of symbolDefinitions.values()) {
+        allDefinitions.push(...definitions);
+    }
+    return allDefinitions;
+}
+
+/**
  * Get document symbols (functions, structs, enums)
  */
 export function getDocumentSymbols(document: TextDocument): DocumentSymbol[] {
@@ -236,8 +250,8 @@ export function getDocumentSymbols(document: TextDocument): DocumentSymbol[] {
             });
         }
 
-        // Match struct definitions
-        const structMatch = line.match(/\bstruct\s+([A-Z][a-zA-Z0-9_]*)/);
+        // Match struct definitions (support both uppercase and lowercase)
+        const structMatch = line.match(/\bstruct\s+([a-zA-Z_][a-zA-Z0-9_]*)/);
         if (structMatch) {
             symbols.push({
                 name: structMatch[1],
@@ -253,8 +267,8 @@ export function getDocumentSymbols(document: TextDocument): DocumentSymbol[] {
             });
         }
 
-        // Match enum definitions
-        const enumMatch = line.match(/\benum\s+([A-Z][a-zA-Z0-9_]*)/);
+        // Match enum definitions (support both uppercase and lowercase)
+        const enumMatch = line.match(/\benum\s+([a-zA-Z_][a-zA-Z0-9_]*)/);
         if (enumMatch) {
             symbols.push({
                 name: enumMatch[1],

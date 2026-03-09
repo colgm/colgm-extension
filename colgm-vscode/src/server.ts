@@ -11,7 +11,7 @@ import { TextDocument } from 'vscode-languageserver-textdocument';
 import { generateCompletionItems } from './server/completions';
 import { validateTextDocument } from './server/diagnostics';
 import { getHover } from './server/hover';
-import { buildSymbolDefinitions, findDefinition, getDocumentSymbols } from './server/symbols';
+import { buildSymbolDefinitions, findDefinition, getDocumentSymbols, symbolDefinitions } from './server/symbols';
 
 // Create a connection for the server
 const connection = createConnection(ProposedFeatures.all);
@@ -33,6 +33,15 @@ connection.onInitialize((params: InitializeParams): InitializeResult => {
         }
     };
     return result;
+});
+
+// After initialization, scan all already-open documents
+connection.onInitialized(() => {
+    // Process all documents that were already open before the server was initialized
+    for (const document of documents.all()) {
+        buildSymbolDefinitions(document);
+        validateTextDocument(connection, document);
+    }
 });
 
 // Completion handler
@@ -79,6 +88,12 @@ documents.onDidChangeContent((change): void => {
 // Document open handler
 documents.onDidOpen((change): void => {
     buildSymbolDefinitions(change.document);
+    validateTextDocument(connection, change.document);
+});
+
+// Document close handler - clean up symbol definitions
+documents.onDidClose((change): void => {
+    symbolDefinitions.delete(change.document.uri);
 });
 
 // Make the text document manager listen on the connection

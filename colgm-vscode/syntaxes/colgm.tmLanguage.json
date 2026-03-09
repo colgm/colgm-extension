@@ -223,10 +223,10 @@
           "include": "#functions"
       },
       {
-          "include": "#types"
+          "include": "#keywords"
       },
       {
-          "include": "#keywords"
+          "include": "#types"
       },
       {
           "include": "#lifetimes"
@@ -986,7 +986,7 @@
               },
               {
                   "comment": "struct declarations",
-                  "match": "\\b(struct)\\s+(_?[A-Z][A-Za-z0-9_]*)\\b",
+                  "match": "\\b(struct)\\s+(_?[a-zA-Z][A-Za-z0-9_]*)\\b",
                   "captures": {
                       "1": {
                           "name": "keyword.declaration.struct.colgm storage.type.colgm"
@@ -998,7 +998,7 @@
               },
               {
                   "comment": "enum declarations",
-                  "match": "\\b(enum)\\s+(_?[A-Z][A-Za-z0-9_]*)\\b",
+                  "match": "\\b(enum)\\s+(_?[a-zA-Z][A-Za-z0-9_]*)\\b",
                   "captures": {
                       "1": {
                           "name": "keyword.declaration.enum.colgm storage.type.colgm"
@@ -1009,9 +1009,21 @@
                   }
               },
               {
+                  "comment": "union declarations",
+                  "match": "\\b(union)\\s*\\([^)]*\\)\\s*(_?[a-zA-Z][A-Za-z0-9_]*)\\b",
+                  "captures": {
+                      "1": {
+                          "name": "keyword.declaration.union.colgm storage.type.colgm"
+                      },
+                      "2": {
+                          "name": "entity.name.type.union.colgm"
+                      }
+                  }
+              },
+              {
                   "comment": "types",
                   "name": "entity.name.type.colgm",
-                  "match": "\\b_?[A-Z][A-Za-z0-9_]*\\b(?!!)"
+                  "match": "\\b_?[a-zA-Z][A-Za-z0-9_]*\\b(?!!)"
               }
           ]
       },

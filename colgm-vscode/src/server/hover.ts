@@ -5,7 +5,7 @@ import {
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import { getWordAtPosition } from './utils';
 import { typeDescriptions, keywordDescriptions } from './completions';
-import { symbolDefinitions, MemberInfo } from './symbols';
+import { symbolDefinitions, getAllSymbolDefinitions, MemberInfo } from './symbols';
 
 /**
  * Format members for hover display
@@ -69,39 +69,37 @@ export function getHover(document: TextDocument, position: Position): Hover | nu
         };
     }
 
-    // Check if it's a user-defined symbol
-    const definitions = symbolDefinitions.get(document.uri);
-    if (definitions) {
-        const symbolDef = definitions.find(def => def.name === word);
-        if (symbolDef) {
-            const kindLabel = symbolDef.kind === 'func' ? 'func' :
-                              symbolDef.kind === 'struct' ? 'struct' :
-                              symbolDef.kind === 'enum' ? 'enum' :
-                              symbolDef.kind === 'union' ? 'union' : '';
+    // Check if it's a user-defined symbol (search across all documents)
+    const allDefinitions = getAllSymbolDefinitions();
+    const symbolDef = allDefinitions.find(def => def.name === word);
+    if (symbolDef) {
+        const kindLabel = symbolDef.kind === 'func' ? 'func' :
+                          symbolDef.kind === 'struct' ? 'struct' :
+                          symbolDef.kind === 'enum' ? 'enum' :
+                          symbolDef.kind === 'union' ? 'union' : '';
 
-            const signature = symbolDef.signature || `${kindLabel} ${word}`;
-            
-            let hoverContent = signature;
-            
-            // Add members for struct/enum/union
-            if (symbolDef.members && symbolDef.members.length > 0) {
-                const membersContent = formatMembers(symbolDef.members, symbolDef.kind);
-                if (membersContent) {
-                    hoverContent += ' {\n' + membersContent + '\n}';
-                }
+        const signature = symbolDef.signature || `${kindLabel} ${word}`;
+
+        let hoverContent = signature;
+
+        // Add members for struct/enum/union
+        if (symbolDef.members && symbolDef.members.length > 0) {
+            const membersContent = formatMembers(symbolDef.members, symbolDef.kind);
+            if (membersContent) {
+                hoverContent += ' {\n' + membersContent + '\n}';
             }
-
-            return {
-                contents: {
-                    kind: 'markdown',
-                    value: [
-                        '```colgm',
-                        hoverContent,
-                        '```'
-                    ].join('\n')
-                }
-            };
         }
+
+        return {
+            contents: {
+                kind: 'markdown',
+                value: [
+                    '```colgm',
+                    hoverContent,
+                    '```'
+                ].join('\n')
+            }
+        };
     }
 
     return null;
