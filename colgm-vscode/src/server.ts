@@ -51,7 +51,7 @@ connection.onCompletion((params): ReturnType<typeof generateCompletionItems> => 
         return [];
     }
 
-    return generateCompletionItems();
+    return generateCompletionItems(params.textDocument.uri);
 });
 
 // Hover handler

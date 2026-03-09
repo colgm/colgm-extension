@@ -2,6 +2,7 @@ import {
     CompletionItem,
     CompletionItemKind,
 } from 'vscode-languageserver/node';
+import { SymbolDefinition, getAllSymbolDefinitions } from './symbols';
 
 /**
  * Colgm language keywords
@@ -73,9 +74,9 @@ export const keywordDescriptions: Record<string, string> = {
 };
 
 /**
- * Generate completion items for keywords and types
+ * Generate completion items for keywords, types, and global identifiers
  */
-export function generateCompletionItems(): CompletionItem[] {
+export function generateCompletionItems(currentDocumentUri?: string): CompletionItem[] {
     const items: CompletionItem[] = [];
 
     // Add keyword completions
@@ -95,6 +96,55 @@ export function generateCompletionItems(): CompletionItem[] {
             kind: CompletionItemKind.TypeParameter,
             detail: 'Primitive Type',
             documentation: typeDescriptions[type] || ''
+        });
+    }
+
+    // Add global identifier completions from all documents
+    const allSymbols = getAllSymbolDefinitions();
+    const seenNames = new Set<string>();
+    
+    for (const symbol of allSymbols) {
+        // Skip symbols from the current document to avoid duplicates with local scope
+        if (currentDocumentUri && symbol.uri === currentDocumentUri) {
+            continue;
+        }
+        
+        // Avoid duplicate names
+        if (seenNames.has(symbol.name)) {
+            continue;
+        }
+        seenNames.add(symbol.name);
+
+        let kind: CompletionItemKind;
+        let detail: string;
+
+        switch (symbol.kind) {
+            case 'func':
+                kind = CompletionItemKind.Function;
+                detail = symbol.signature || `func ${symbol.name}`;
+                break;
+            case 'struct':
+                kind = CompletionItemKind.Struct;
+                detail = symbol.signature || `struct ${symbol.name}`;
+                break;
+            case 'enum':
+                kind = CompletionItemKind.Enum;
+                detail = symbol.signature || `enum ${symbol.name}`;
+                break;
+            case 'union':
+                kind = CompletionItemKind.Class;
+                detail = symbol.signature || `union ${symbol.name}`;
+                break;
+            default:
+                kind = CompletionItemKind.Text;
+                detail = symbol.kind;
+        }
+
+        items.push({
+            label: symbol.name,
+            kind: kind,
+            detail: detail,
+            documentation: symbol.signature
         });
     }
 
