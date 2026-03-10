@@ -20,6 +20,17 @@ export interface MemberInfo {
 }
 
 /**
+ * Variable information
+ */
+export interface VariableInfo {
+    name: string;
+    type?: string;
+    uri: string;
+    line: number;
+    character: number;
+}
+
+/**
  * Symbol definition interface
  */
 export interface SymbolDefinition {
@@ -36,6 +47,46 @@ export interface SymbolDefinition {
  * Store symbol definitions for go-to-definition
  */
 export const symbolDefinitions: Map<string, SymbolDefinition[]> = new Map();
+
+/**
+ * Store variable definitions for completions
+ */
+export const variableDefinitions: Map<string, VariableInfo[]> = new Map();
+
+/**
+ * Get members for a specific type name
+ */
+export function getMembersForType(typeName: string): MemberInfo[] | undefined {
+    // Remove reference modifier if present
+    const cleanTypeName = typeName.replace(/^&/, '').trim();
+    
+    for (const definitions of symbolDefinitions.values()) {
+        for (const def of definitions) {
+            if (def.name === cleanTypeName && def.members) {
+                return def.members;
+            }
+        }
+    }
+    return undefined;
+}
+
+/**
+ * Get all variables from current document
+ */
+export function getVariablesFromDocument(uri: string): VariableInfo[] {
+    return variableDefinitions.get(uri) || [];
+}
+
+/**
+ * Get all variables from all documents
+ */
+export function getAllVariables(): VariableInfo[] {
+    const allVariables: VariableInfo[] = [];
+    for (const variables of variableDefinitions.values()) {
+        allVariables.push(...variables);
+    }
+    return allVariables;
+}
 
 /**
  * Parse members from struct/enum/union body
@@ -96,6 +147,7 @@ export function buildSymbolDefinitions(document: TextDocument): void {
     const text = document.getText();
     const lines = text.split('\n');
     const definitions: SymbolDefinition[] = [];
+    const variables: VariableInfo[] = [];
 
     for (let i = 0; i < lines.length; i++) {
         const line = lines[i];
@@ -169,9 +221,49 @@ export function buildSymbolDefinitions(document: TextDocument): void {
                 members: members
             });
         }
+
+        // Match variable definitions: var name: Type = value or pub var name: Type = value
+        const varWithTypeMatch = line.match(/\b(?:pub\s+)?var\s+([a-zA-Z_][a-zA-Z0-9_]*)\s*:\s*([a-zA-Z_][a-zA-Z0-9_]*)/);
+        if (varWithTypeMatch) {
+            variables.push({
+                name: varWithTypeMatch[1],
+                type: varWithTypeMatch[2],
+                uri: document.uri,
+                line: i,
+                character: line.indexOf(varWithTypeMatch[1])
+            });
+        }
+
+        // Match local variable without explicit type: var name = value
+        const varWithoutTypeMatch = line.match(/\b(?:pub\s+)?var\s+([a-zA-Z_][a-zA-Z0-9_]*)\s*=\s*/);
+        if (varWithoutTypeMatch && !varWithTypeMatch) {
+            variables.push({
+                name: varWithoutTypeMatch[1],
+                type: undefined,
+                uri: document.uri,
+                line: i,
+                character: line.indexOf(varWithoutTypeMatch[1])
+            });
+        }
+
+        // Match function parameter variables: func name(param: Type)
+        if (funcMatch) {
+            const params = funcMatch[2];
+            const paramMatches = params.matchAll(/([a-zA-Z_][a-zA-Z0-9_]*)\s*:\s*([a-zA-Z_][a-zA-Z0-9_]*)/g);
+            for (const paramMatch of paramMatches) {
+                variables.push({
+                    name: paramMatch[1],
+                    type: paramMatch[2],
+                    uri: document.uri,
+                    line: i,
+                    character: line.indexOf(paramMatch[1])
+                });
+            }
+        }
     }
 
     symbolDefinitions.set(document.uri, definitions);
+    variableDefinitions.set(document.uri, variables);
 }
 
 /**
@@ -202,6 +294,21 @@ export function findDefinition(
                     range: {
                         start: { line: def.line, character: def.character },
                         end: { line: def.line, character: def.character + def.name.length }
+                    }
+                });
+            }
+        }
+    }
+
+    // Search through variable definitions
+    for (const variables of variableDefinitions.values()) {
+        for (const variable of variables) {
+            if (variable.name === word) {
+                locations.push({
+                    uri: variable.uri,
+                    range: {
+                        start: { line: variable.line, character: variable.character },
+                        end: { line: variable.line, character: variable.character + variable.name.length }
                     }
                 });
             }

@@ -4,6 +4,7 @@ import {
     InitializeParams,
     TextDocumentSyncKind,
     InitializeResult,
+    CompletionParams,
 } from 'vscode-languageserver/node';
 import { TextDocuments } from 'vscode-languageserver/node';
 import { TextDocument } from 'vscode-languageserver-textdocument';
@@ -11,7 +12,7 @@ import { TextDocument } from 'vscode-languageserver-textdocument';
 import { generateCompletionItems } from './server/completions';
 import { validateTextDocument } from './server/diagnostics';
 import { getHover } from './server/hover';
-import { buildSymbolDefinitions, findDefinition, getDocumentSymbols, symbolDefinitions } from './server/symbols';
+import { buildSymbolDefinitions, findDefinition, getDocumentSymbols, symbolDefinitions, variableDefinitions } from './server/symbols';
 
 // Create a connection for the server
 const connection = createConnection(ProposedFeatures.all);
@@ -45,13 +46,13 @@ connection.onInitialized(() => {
 });
 
 // Completion handler
-connection.onCompletion((params): ReturnType<typeof generateCompletionItems> => {
+connection.onCompletion((params: CompletionParams): ReturnType<typeof generateCompletionItems> => {
     const document = documents.get(params.textDocument.uri);
     if (!document) {
         return [];
     }
 
-    return generateCompletionItems(params.textDocument.uri);
+    return generateCompletionItems(document, params.position, params.context);
 });
 
 // Hover handler
@@ -94,6 +95,7 @@ documents.onDidOpen((change): void => {
 // Document close handler - clean up symbol definitions
 documents.onDidClose((change): void => {
     symbolDefinitions.delete(change.document.uri);
+    variableDefinitions.delete(change.document.uri);
 });
 
 // Make the text document manager listen on the connection

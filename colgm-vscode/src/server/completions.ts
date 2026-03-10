@@ -1,8 +1,11 @@
 import {
     CompletionItem,
     CompletionItemKind,
+    CompletionContext,
 } from 'vscode-languageserver/node';
-import { SymbolDefinition, getAllSymbolDefinitions } from './symbols';
+import { SymbolDefinition, getAllSymbolDefinitions, getMembersForType, getVariablesFromDocument, getAllVariables, MemberInfo } from './symbols';
+import { TextDocument } from 'vscode-languageserver-textdocument';
+import { Position } from 'vscode-languageserver-textdocument';
 
 /**
  * Colgm language keywords
@@ -74,10 +77,99 @@ export const keywordDescriptions: Record<string, string> = {
 };
 
 /**
+ * Get the prefix expression before the cursor (for member completion)
+ * Returns the identifier before '.' or ':'
+ */
+function getPrefixExpression(document: TextDocument, position: Position, triggerChar: string): string | null {
+    const text = document.getText();
+    const offset = document.offsetAt(position);
+
+    // Look backward from the position to find the identifier
+    let start = offset - 1; // Start before the trigger character
+
+    // Skip any whitespace before the trigger character
+    while (start >= 0 && /\s/.test(text[start])) {
+        start--;
+    }
+
+    // Find the end of the identifier
+    let end = start + 1;
+
+    // Move backward to find the beginning of the identifier
+    while (start >= 0 && /[\w_]/.test(text[start])) {
+        start--;
+    }
+
+    // Move forward to find the end of the identifier
+    while (end < text.length && /[\w_]/.test(text[end])) {
+        end++;
+    }
+
+    if (start >= end) {
+        return null;
+    }
+
+    return text.substring(start + 1, end);
+}
+
+/**
+ * Generate member completion items for a type
+ */
+function generateMemberCompletions(typeName: string): CompletionItem[] {
+    const items: CompletionItem[] = [];
+    const members = getMembersForType(typeName);
+
+    if (!members) {
+        return items;
+    }
+
+    for (const member of members) {
+        const kind = CompletionItemKind.Field;
+        const detail = member.type ? `${member.name}: ${member.type}` : member.name;
+
+        items.push({
+            label: member.name,
+            kind: kind,
+            detail: detail,
+            documentation: member.type ? `Type: ${member.type}` : undefined
+        });
+    }
+
+    return items;
+}
+
+/**
  * Generate completion items for keywords, types, and global identifiers
  */
-export function generateCompletionItems(currentDocumentUri?: string): CompletionItem[] {
+export function generateCompletionItems(
+    document: TextDocument,
+    position: Position,
+    context?: CompletionContext
+): CompletionItem[] {
     const items: CompletionItem[] = [];
+
+    // Check if triggered by '.' or ':' for member completion
+    if (context?.triggerCharacter === '.' || context?.triggerCharacter === ':') {
+        const prefix = getPrefixExpression(document, position, context.triggerCharacter);
+        if (prefix) {
+            // Try to find variable type
+            const variables = getVariablesFromDocument(document.uri);
+            const variable = variables.find(v => v.name === prefix);
+            
+            if (variable && variable.type) {
+                const memberItems = generateMemberCompletions(variable.type);
+                if (memberItems.length > 0) {
+                    return memberItems;
+                }
+            }
+            
+            // If no variable found, try to find type directly
+            const memberItems = generateMemberCompletions(prefix);
+            if (memberItems.length > 0) {
+                return memberItems;
+            }
+        }
+    }
 
     // Add keyword completions
     for (const keyword of keywords) {
@@ -99,16 +191,33 @@ export function generateCompletionItems(currentDocumentUri?: string): Completion
         });
     }
 
-    // Add global identifier completions from all documents
-    const allSymbols = getAllSymbolDefinitions();
+    // Add variable completions from current document
+    const currentVariables = getVariablesFromDocument(document.uri);
     const seenNames = new Set<string>();
-    
-    for (const symbol of allSymbols) {
-        // Skip symbols from the current document to avoid duplicates with local scope
-        if (currentDocumentUri && symbol.uri === currentDocumentUri) {
+
+    for (const variable of currentVariables) {
+        if (seenNames.has(variable.name)) {
             continue;
         }
-        
+        seenNames.add(variable.name);
+
+        items.push({
+            label: variable.name,
+            kind: CompletionItemKind.Variable,
+            detail: variable.type ? `var ${variable.name}: ${variable.type}` : `var ${variable.name}`,
+            documentation: variable.type ? `Variable of type ${variable.type}` : 'Variable'
+        });
+    }
+
+    // Add global identifier completions from all documents
+    const allSymbols = getAllSymbolDefinitions();
+
+    for (const symbol of allSymbols) {
+        // Skip symbols from the current document to avoid duplicates with local scope
+        if (symbol.uri === document.uri) {
+            continue;
+        }
+
         // Avoid duplicate names
         if (seenNames.has(symbol.name)) {
             continue;
