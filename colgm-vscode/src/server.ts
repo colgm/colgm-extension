@@ -94,7 +94,9 @@ documents.onDidOpen((change): void => {
 
 // Document close handler - clean up symbol definitions
 documents.onDidClose((change): void => {
-    symbolDefinitions.delete(change.document.uri);
+    // Do not remove the document from the symbol definitions map
+    // Otherwise, symbols across modules will not be accessible
+    // symbolDefinitions.delete(change.document.uri);
     variableDefinitions.delete(change.document.uri);
 });
 
