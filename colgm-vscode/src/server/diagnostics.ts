@@ -13,44 +13,6 @@ export function validateTextDocument(connection: Connection, document: TextDocum
     const text = document.getText();
     const lines = text.split('\n');
 
-    // Check for unmatched braces
-    let braceCount = 0;
-    for (let i = 0; i < text.length; i++) {
-        if (text[i] === '{') braceCount++;
-        if (text[i] === '}') braceCount--;
-    }
-
-    if (braceCount !== 0) {
-        diagnostics.push({
-            severity: DiagnosticSeverity.Error,
-            range: {
-                start: { line: 0, character: 0 },
-                end: { line: 0, character: 1 }
-            },
-            message: `Unmatched braces: ${braceCount > 0 ? 'missing }' : 'extra }'}`,
-            source: 'colgm'
-        });
-    }
-
-    // Check for unmatched parentheses
-    let parenCount = 0;
-    for (let i = 0; i < text.length; i++) {
-        if (text[i] === '(') parenCount++;
-        if (text[i] === ')') parenCount--;
-    }
-
-    if (parenCount !== 0) {
-        diagnostics.push({
-            severity: DiagnosticSeverity.Error,
-            range: {
-                start: { line: 0, character: 0 },
-                end: { line: 0, character: 1 }
-            },
-            message: `Unmatched parentheses: ${parenCount > 0 ? 'missing )' : 'extra )'}`,
-            source: 'colgm'
-        });
-    }
-
     // Check for empty struct/enum definitions
     for (let i = 0; i < lines.length; i++) {
         const line = lines[i];
@@ -64,11 +26,6 @@ export function validateTextDocument(connection: Connection, document: TextDocum
                 message: 'Empty struct/enum definition',
                 source: 'colgm'
             });
-        }
-
-        // Check for func without body
-        if (/\bfunc\s+\w+\s*\([^)]*\)\s*(\{)?\s*$/.test(line) && !line.includes('{')) {
-            // This is a forward declaration, which is ok
         }
     }
 
