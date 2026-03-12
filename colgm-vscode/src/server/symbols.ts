@@ -54,12 +54,31 @@ export const symbolDefinitions: Map<string, SymbolDefinition[]> = new Map();
 export const variableDefinitions: Map<string, VariableInfo[]> = new Map();
 
 /**
+ * Store all members (fields, variants, tags) for quick lookup
+ * Key: member name, Value: array of member info with parent type info
+ */
+export interface MemberDefinition {
+    name: string;
+    parentType: string;      // The struct/enum/union name
+    parentKind: string;      // 'struct', 'enum', or 'union'
+    type?: string;           // Member type (for struct/union fields)
+    uri: string;             // Source document URI
+    line: number;            // Definition line
+}
+
+export const memberDefinitions: Map<string, MemberDefinition[]> = new Map();
+
+/**
  * Get members for a specific type name
  */
 export function getMembersForType(typeName: string): MemberInfo[] | undefined {
-    // Remove reference modifier if present
-    const cleanTypeName = typeName.replace(/^&/, '').trim();
-    
+    // Remove reference/pointer modifiers if present (prefix or suffix &, *)
+    let cleanTypeName = typeName.trim();
+    cleanTypeName = cleanTypeName.replace(/^&/, '');  // prefix &
+    cleanTypeName = cleanTypeName.replace(/&$/, '');  // suffix &
+    cleanTypeName = cleanTypeName.replace(/\*$/, ''); // suffix *
+    cleanTypeName = cleanTypeName.trim();
+
     for (const definitions of symbolDefinitions.values()) {
         for (const def of definitions) {
             if (def.name === cleanTypeName && def.members) {
@@ -68,6 +87,24 @@ export function getMembersForType(typeName: string): MemberInfo[] | undefined {
         }
     }
     return undefined;
+}
+
+/**
+ * Get all members from all documents
+ */
+export function getAllMembers(): MemberDefinition[] {
+    const allMembers: MemberDefinition[] = [];
+    for (const members of memberDefinitions.values()) {
+        allMembers.push(...members);
+    }
+    return allMembers;
+}
+
+/**
+ * Get members by name (for global candidate lookup)
+ */
+export function getMembersByName(name: string): MemberDefinition[] {
+    return memberDefinitions.get(name) || [];
 }
 
 /**
@@ -91,7 +128,7 @@ export function getAllVariables(): VariableInfo[] {
 /**
  * Parse members from struct/enum/union body
  */
-function parseMembers(lines: string[], startLine: number, kind: string): MemberInfo[] {
+function parseMembers(lines: string[], startLine: number, kind: string, typeName: string, document: TextDocument): MemberInfo[] {
     const members: MemberInfo[] = [];
     let braceCount = 0;
     let started = false;
@@ -115,29 +152,55 @@ function parseMembers(lines: string[], startLine: number, kind: string): MemberI
         if (line === '{' || line.endsWith('{')) continue;
         if (line === '}') break;
 
-        // Parse enum variant: `Case(Type)` or `Case`
+        // Parse enum variant: `Case,` or `Case` (no tuple syntax)
         if (kind === 'enum') {
-            const enumVariantMatch = line.match(/^([A-Z][a-zA-Z0-9_]*)\s*(?:\(([^)]*)\))?/);
+            const enumVariantMatch = line.match(/^\s*([A-Z][a-zA-Z0-9_]*)(?:,\s*)?/);
             if (enumVariantMatch) {
+                const memberName = enumVariantMatch[1];
                 members.push({
-                    name: enumVariantMatch[1],
-                    type: enumVariantMatch[2] || undefined
+                    name: memberName
                 });
+                // Add to member definitions for global lookup
+                addMemberDefinition(memberName, typeName, kind, undefined, document.uri, i);
             }
             continue;
         }
 
         // Struct/union field: `name: Type` or `pub name: Type`
-        const fieldMatch = line.match(/^(?:pub\s+)?([a-zA-Z_][a-zA-Z0-9_]*)\s*:\s*(.+?),?\s*$/);
+        // Type can end with optional comma: `name: Type,` or `name: Type`
+        const fieldMatch = line.match(/^\s*(?:pub\s+)?([a-zA-Z_][a-zA-Z0-9_]*)\s*:\s*(.+?)(?:,\s*)?$/);
         if (fieldMatch) {
+            const memberName = fieldMatch[1];
+            const memberType = fieldMatch[2].trim();
             members.push({
-                name: fieldMatch[1],
-                type: fieldMatch[2].trim()
+                name: memberName,
+                type: memberType
             });
+            // Add to member definitions for global lookup
+            addMemberDefinition(memberName, typeName, kind, memberType, document.uri, i);
         }
     }
 
     return members;
+}
+
+/**
+ * Add a member definition to the global map
+ */
+function addMemberDefinition(name: string, parentType: string, parentKind: string, type: string | undefined, uri: string, line: number): void {
+    let members = memberDefinitions.get(name);
+    if (!members) {
+        members = [];
+        memberDefinitions.set(name, members);
+    }
+    members.push({
+        name,
+        parentType,
+        parentKind,
+        type,
+        uri,
+        line
+    });
 }
 
 /**
@@ -148,6 +211,16 @@ export function buildSymbolDefinitions(document: TextDocument): void {
     const lines = text.split('\n');
     const definitions: SymbolDefinition[] = [];
     const variables: VariableInfo[] = [];
+
+    // Clear old member definitions for this document
+    for (const [name, members] of memberDefinitions.entries()) {
+        const filtered = members.filter(m => m.uri !== document.uri);
+        if (filtered.length === 0) {
+            memberDefinitions.delete(name);
+        } else {
+            memberDefinitions.set(name, filtered);
+        }
+    }
 
     for (let i = 0; i < lines.length; i++) {
         const line = lines[i];
@@ -175,7 +248,7 @@ export function buildSymbolDefinitions(document: TextDocument): void {
         const structMatch = line.match(/\bstruct\s+([a-zA-Z_][a-zA-Z0-9_]*)\s*\{/);
         if (structMatch) {
             const structName = structMatch[1];
-            const members = parseMembers(lines, i, 'struct');
+            const members = parseMembers(lines, i, 'struct', structName, document);
             definitions.push({
                 name: structName,
                 uri: document.uri,
@@ -192,7 +265,7 @@ export function buildSymbolDefinitions(document: TextDocument): void {
         const enumMatch = line.match(/\benum\s+([a-zA-Z_][a-zA-Z0-9_]*)\s*\{/);
         if (enumMatch) {
             const enumName = enumMatch[1];
-            const members = parseMembers(lines, i, 'enum');
+            const members = parseMembers(lines, i, 'enum', enumName, document);
             definitions.push({
                 name: enumName,
                 uri: document.uri,
@@ -210,7 +283,7 @@ export function buildSymbolDefinitions(document: TextDocument): void {
         if (unionMatch) {
             const unionType = unionMatch[1];
             const unionName = unionMatch[2];
-            const members = parseMembers(lines, i, 'union');
+            const members = parseMembers(lines, i, 'union', unionName, document);
             definitions.push({
                 name: unionName,
                 uri: document.uri,
@@ -223,11 +296,12 @@ export function buildSymbolDefinitions(document: TextDocument): void {
         }
 
         // Match variable definitions: var name: Type = value or pub var name: Type = value
-        const varWithTypeMatch = line.match(/\b(?:pub\s+)?var\s+([a-zA-Z_][a-zA-Z0-9_]*)\s*:\s*([a-zA-Z_][a-zA-Z0-9_]*)/);
+        // Type can include *, &, const, spaces, array types like [i8; 128], etc.
+        const varWithTypeMatch = line.match(/\b(?:pub\s+)?var\s+([a-zA-Z_][a-zA-Z0-9_]*)\s*:\s*([^=]+?)\s*=/);
         if (varWithTypeMatch) {
             variables.push({
                 name: varWithTypeMatch[1],
-                type: varWithTypeMatch[2],
+                type: varWithTypeMatch[2].trim(),
                 uri: document.uri,
                 line: i,
                 character: line.indexOf(varWithTypeMatch[1])

@@ -3,7 +3,7 @@ import {
     CompletionItemKind,
     CompletionContext,
 } from 'vscode-languageserver/node';
-import { SymbolDefinition, getAllSymbolDefinitions, getMembersForType, getVariablesFromDocument, getAllVariables, MemberInfo } from './symbols';
+import { SymbolDefinition, getAllSymbolDefinitions, getMembersForType, getVariablesFromDocument, getAllVariables, MemberInfo, getAllMembers, getMembersByName, MemberDefinition } from './symbols';
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import { Position } from 'vscode-languageserver-textdocument';
 
@@ -115,7 +115,7 @@ function getPrefixExpression(document: TextDocument, position: Position, trigger
 /**
  * Generate member completion items for a type
  */
-function generateMemberCompletions(typeName: string): CompletionItem[] {
+function generateMemberCompletions(typeName: string, parentKind?: string): CompletionItem[] {
     const items: CompletionItem[] = [];
     const members = getMembersForType(typeName);
 
@@ -124,7 +124,13 @@ function generateMemberCompletions(typeName: string): CompletionItem[] {
     }
 
     for (const member of members) {
-        const kind = CompletionItemKind.Field;
+        let kind: CompletionItemKind = CompletionItemKind.Field;
+        if (parentKind === 'enum') {
+            kind = CompletionItemKind.EnumMember;
+        } else if (parentKind === 'union') {
+            kind = CompletionItemKind.Class;
+        }
+
         const detail = member.type ? `${member.name}: ${member.type}` : member.name;
 
         items.push({
@@ -132,6 +138,36 @@ function generateMemberCompletions(typeName: string): CompletionItem[] {
             kind: kind,
             detail: detail,
             documentation: member.type ? `Type: ${member.type}` : undefined
+        });
+    }
+
+    return items;
+}
+
+/**
+ * Generate completion items for enum variants/union tags by member name (global lookup)
+ */
+function generateGlobalMemberCompletions(memberName: string): CompletionItem[] {
+    const items: CompletionItem[] = [];
+    const members = getMembersByName(memberName);
+
+    for (const member of members) {
+        let kind: CompletionItemKind = CompletionItemKind.Field;
+        if (member.parentKind === 'enum') {
+            kind = CompletionItemKind.EnumMember;
+        } else if (member.parentKind === 'union') {
+            kind = CompletionItemKind.Class;
+        }
+
+        const detail = member.type 
+            ? `${member.name} (${member.parentKind} ${member.parentType}): ${member.type}`
+            : `${member.name} (${member.parentKind} ${member.parentType})`;
+
+        items.push({
+            label: member.name,
+            kind: kind,
+            detail: detail,
+            documentation: `Member of ${member.parentKind} ${member.parentType}`
         });
     }
 
@@ -206,6 +242,36 @@ export function generateCompletionItems(
             kind: CompletionItemKind.Variable,
             detail: variable.type ? `var ${variable.name}: ${variable.type}` : `var ${variable.name}`,
             documentation: variable.type ? `Variable of type ${variable.type}` : 'Variable'
+        });
+    }
+
+    // Add global member completions (enum variants, union tags)
+    // This allows typing "None" or "Some" to show enum variants directly
+    const allMembers = getAllMembers();
+    const memberSeenNames = new Set<string>();
+
+    for (const member of allMembers) {
+        if (memberSeenNames.has(member.name)) {
+            continue;
+        }
+        memberSeenNames.add(member.name);
+
+        let kind: CompletionItemKind = CompletionItemKind.Field;
+        if (member.parentKind === 'enum') {
+            kind = CompletionItemKind.EnumMember;
+        } else if (member.parentKind === 'union') {
+            kind = CompletionItemKind.Class;
+        }
+
+        const detail = member.type 
+            ? `${member.name} (${member.parentKind} ${member.parentType}): ${member.type}`
+            : `${member.name} (${member.parentKind} ${member.parentType})`;
+
+        items.push({
+            label: member.name,
+            kind: kind,
+            detail: detail,
+            documentation: `Member of ${member.parentKind} ${member.parentType}`
         });
     }
 
