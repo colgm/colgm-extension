@@ -26,7 +26,7 @@ connection.onInitialize((params: InitializeParams): InitializeResult => {
             textDocumentSync: TextDocumentSyncKind.Full,
             completionProvider: {
                 resolveProvider: false,
-                triggerCharacters: ['.', ':']
+                triggerCharacters: ['.', ':', '>']
             },
             hoverProvider: true,
             definitionProvider: true,

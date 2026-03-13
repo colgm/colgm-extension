@@ -78,7 +78,7 @@ export const keywordDescriptions: Record<string, string> = {
 
 /**
  * Get the prefix expression before the cursor (for member completion)
- * Returns the identifier before '.' or ':'
+ * Returns the identifier before '.', ':', or '->'
  */
 function getPrefixExpression(document: TextDocument, position: Position, triggerChar: string): string | null {
     const text = document.getText();
@@ -86,6 +86,16 @@ function getPrefixExpression(document: TextDocument, position: Position, trigger
 
     // Look backward from the position to find the identifier
     let start = offset - 1; // Start before the trigger character
+
+    // For '->' trigger (triggered by '>')
+    if (triggerChar === '>') {
+        // Check if the previous character is '-'
+        if (offset > 2 && text[offset - 2] === '-') {
+            start = offset - 3; // Position before '-'
+        } else {
+            return null; // Not a '->' sequence, skip member completion
+        }
+    }
 
     // Skip any whitespace before the trigger character
     while (start >= 0 && /\s/.test(text[start])) {
@@ -184,21 +194,34 @@ export function generateCompletionItems(
 ): CompletionItem[] {
     const items: CompletionItem[] = [];
 
-    // Check if triggered by '.' or ':' for member completion
-    if (context?.triggerCharacter === '.' || context?.triggerCharacter === ':') {
+    // Check if triggered by '.', ':', or '->' for member completion
+    if (context?.triggerCharacter === '.' ||
+        context?.triggerCharacter === ':' ||
+        context?.triggerCharacter === '>') {
+        // For '>' trigger, only proceed if it's part of '->' sequence
+        if (context.triggerCharacter === '>') {
+            const text = document.getText();
+            const offset = document.offsetAt(position);
+            // Check if the previous character is '-'
+            if (offset < 2 || text[offset - 2] !== '-') {
+                // Not a '->' sequence, return empty to avoid unwanted completions
+                return [];
+            }
+        }
+
         const prefix = getPrefixExpression(document, position, context.triggerCharacter);
         if (prefix) {
             // Try to find variable type
             const variables = getVariablesFromDocument(document.uri);
             const variable = variables.find(v => v.name === prefix);
-            
+
             if (variable && variable.type) {
                 const memberItems = generateMemberCompletions(variable.type);
                 if (memberItems.length > 0) {
                     return memberItems;
                 }
             }
-            
+
             // If no variable found, try to find type directly
             const memberItems = generateMemberCompletions(prefix);
             if (memberItems.length > 0) {
