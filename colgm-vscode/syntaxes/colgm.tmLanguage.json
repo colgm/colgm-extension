@@ -141,7 +141,7 @@
                   "name": "keyword.other.crate.colgm"
               }
           },
-          "end": ";",
+          "end": ";?$",
           "endCaptures": {
               "0": {
                   "name": "punctuation.semi.colgm"
@@ -171,7 +171,7 @@
                   "name": "keyword.other.colgm"
               }
           },
-          "end": ";",
+          "end": ";?$",
           "endCaptures": {
               "0": {
                   "name": "punctuation.semi.colgm"
@@ -480,7 +480,7 @@
                           "name": "punctuation.brackets.angle.colgm"
                       }
                   },
-                  "end": "(\\{)|(;)",
+                  "end": "(\\{)|(;?$)",
                   "endCaptures": {
                       "1": {
                           "name": "punctuation.brackets.curly.colgm"
