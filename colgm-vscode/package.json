@@ -3,7 +3,7 @@
   "publisher": "colgm",
   "displayName": "colgm",
   "description": "Language support for Colgm with LSP features",
-  "icon": "./icon/colgm.png",
+  "icon": "icon/colgm.png",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/colgm/colgm-extension.git"
@@ -76,16 +76,14 @@
     "url": "https://github.com/colgm/colgm-extension/issues"
   },
   "homepage": "https://github.com/colgm/colgm-extension#readme",
-  "dependencies": {
-    "vscode-languageclient": "^9.0.1",
-    "vscode-languageserver": "^9.0.1",
-    "vscode-languageserver-protocol": "^3.17.5",
-    "vscode-languageserver-textdocument": "^1.0.12"
-  },
   "devDependencies": {
     "@types/node": "^25.3.5",
     "@types/vscode": "^1.99.0",
     "esbuild": "^0.27.3",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "vscode-languageclient": "^9.0.1",
+    "vscode-languageserver": "^9.0.1",
+    "vscode-languageserver-protocol": "^3.17.5",
+    "vscode-languageserver-textdocument": "^1.0.12"
   }
 }

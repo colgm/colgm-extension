@@ -2,7 +2,6 @@
 **/.eslintrc
 **/*.map
 **/*.ts
-!**/node_modules/**
 **/src/**
 **/.vscode/**
 **/.qwen/**
